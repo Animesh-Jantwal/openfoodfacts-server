@@ -5178,10 +5178,15 @@ sub get_tag_url_id ($tagtype, $tagid) {
 	return $tagid;
 }
 
-# With the 2026/04/13 tags refactor, the tag id is now the canonical id of the tag in the taxonomy, so we can return it directly.
+sub get_taxonomyid ($tag_lc, $tagid) {
 
-sub get_taxonomyid($target_lc, $tag) {
-	return $tag;
+	# $tag_lc  ->  Default tag language if tagid is not prefixed by a language code
+	if ($tagid =~ /^(\w\w):/) {
+		return lc($1) . ':' . get_string_id_for_lang(lc($1), $');
+	}
+	else {
+		return get_string_id_for_lang($tag_lc, $tagid);
+	}
 }
 
 # Init the taxonomies, as most modules / scripts that load Tags.pm expect the taxonomies to be loaded

@@ -49,7 +49,15 @@ is canonicalize_taxonomy_tag('en', 'brands', 'some brand'), 'xx:some brand';
 is canonicalize_taxonomy_tag('en', 'brands', 'xx:some-brand'), 'xx:some-brand';
 is canonicalize_taxonomy_tag('en', 'brands', 'xx:Some brand'), 'xx:Some brand';
 is canonicalize_taxonomy_tag('xx', 'brands', 'some brand'), 'xx:some brand';
-is get_taxonomyid("en", "some brand"), "some brand";
+is get_taxonomyid("en", "some brand"), "some-brand";
+
+# Brands (and other entries) that are not in the taxonomy must still get a normalized tag id,
+# otherwise the same brand entered with a different capitalization or spacing is stored under
+# 2 different tags, and positive and negative searches on the brand miss half of the products.
+# See https://github.com/openfoodfacts/openfoodfacts-server/issues/14198
+is get_taxonomyid("xx", canonicalize_taxonomy_tag("xx", "brands", "Mars Foods")), "xx:mars-foods";
+is get_taxonomyid("xx", canonicalize_taxonomy_tag("xx", "brands", "mars foods")), "xx:mars-foods";
+is get_taxonomyid("xx", canonicalize_taxonomy_tag("en", "brands", "MARS FOODS")), "xx:mars-foods";
 is [gen_tags_hierarchy_taxonomy("en", "brands", "some brand, xx:some-other-brand")],
 	['xx:some brand', 'xx:some-other-brand'];
 
@@ -219,9 +227,9 @@ is(
 );
 is(canonicalize_taxonomy_tag("fr", "test", "Pâte de cacao"), "fr:Pâte de cacao");
 is(display_taxonomy_tag("fr", "test", "fr:Pâte de cacao"), "Pâte de cacao");
-is(get_taxonomyid("en", "pâte de cacao"), "pâte de cacao");
-is(get_taxonomyid("de", "pâte de cacao"), "pâte de cacao");
-is(get_taxonomyid("fr", "fr:pâte de cacao"), "fr:pâte de cacao");
+is(get_taxonomyid("en", "pâte de cacao"), "pate-de-cacao");
+is(get_taxonomyid("de", "pâte de cacao"), "pâte-de-cacao");
+is(get_taxonomyid("fr", "fr:pâte de cacao"), "fr:pate-de-cacao");
 is(get_taxonomyid("fr", "de:pâte"), "de:pâte");
 is(get_taxonomyid("de", "de:pâte"), "de:pâte");
 

@@ -64,7 +64,7 @@ use vars @EXPORT_OK;
 use ProductOpener::Tags qw/get_inherited_property_from_tags get_property canonicalize_taxonomy_tag
 	list_taxonomy_tags_in_language canonicalize_allergens_taxonomy_tag exists_taxonomy_tag
 	gen_tags_list_with_parents display_taxonomy_tag get_city_code
-	init_emb_codes gen_tags_hierarchy_taxonomy get_minimal_tags_subset
+	init_emb_codes gen_tags_hierarchy_taxonomy get_minimal_tags_subset get_taxonomyid
 	%taxonomy_fields %tags_fields %emb_codes_cities/;
 use ProductOpener::Store qw/get_string_id_for_lang/;
 use ProductOpener::PackagerCodes qw/normalize_packager_codes/;
@@ -509,12 +509,18 @@ sub generate_field_tags_from_all_sources ($product_ref, $tagtype) {
 	$log->debug("generate_field_tags_from_all_sources - all input tags", {all_input_tags_list => \@all_input_tags_list})
 		if $log->is_debug();
 
-	$product_ref->{$tagtype . "_tags"} = [gen_tags_list_with_parents("en", $tagtype, \@all_input_tags_list)];
+	my @tags_with_parents = gen_tags_list_with_parents("en", $tagtype, \@all_input_tags_list);
+
+	if (defined $taxonomy_fields{$tagtype}) {
+		$product_ref->{$tagtype . "_tags"} = [map {get_taxonomyid("en", $_)} @tags_with_parents];
+	}
+	else {
+		$product_ref->{$tagtype . "_tags"} = [map {get_string_id_for_lang("no_language", $_)} @tags_with_parents];
+	}
 
 	# For brands, also generate the "brands" field that is used for display
 	if ($tagtype eq "brands") {
-		$product_ref->{$tagtype}
-			= join(", ", map {display_taxonomy_tag("en", $tagtype, $_)} @{$product_ref->{$tagtype . "_tags"}});
+		$product_ref->{$tagtype} = join(", ", map {display_taxonomy_tag("en", $tagtype, $_)} @tags_with_parents);
 	}
 
 	# For EMB codes, also generate the cities_tags
@@ -567,7 +573,7 @@ sub compute_field_tags ($product_ref, $tag_lc, $field) {
 		$product_ref->{$field . "_hierarchy"} = [gen_tags_hierarchy_taxonomy($tag_lc, $field, $product_ref->{$field})];
 		$product_ref->{$field . "_tags"} = [];
 		foreach my $tag (@{$product_ref->{$field . "_hierarchy"}}) {
-			push @{$product_ref->{$field . "_tags"}}, $tag;
+			push @{$product_ref->{$field . "_tags"}}, get_taxonomyid($tag_lc, $tag);
 		}
 	}
 	# tags fields without an associated taxonomy
