@@ -180,6 +180,15 @@ use Scalar::Util qw(blessed looks_like_number);
 
 use GS1::SyntaxEngine::FFI::GS1Encoder;
 
+# FFI::Platypus (used by GS1Encoder) creates these variables in its XS code, so scripts run with "perl -w"
+# print "used only once: possible typo" warnings for them. Using them here stops the warnings.
+# https://github.com/openfoodfacts/openfoodfacts-server/issues/15130
+{
+	no warnings 'void';
+	*FFI::Platypus::keep;
+	*FFI::Platypus::TypeParser::ffi_type;
+}
+
 =head1 FUNCTIONS
 
 =head2 make_sure_numbers_are_stored_as_numbers ( PRODUCT_REF )
